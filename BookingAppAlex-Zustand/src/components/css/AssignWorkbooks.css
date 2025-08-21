@@ -1,0 +1,73 @@
+.assign-workbooks-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 30px 25px;
+  background-color: #ffffff; /* Clean white background */
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Soft shadow */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: "Inter", sans-serif;
+}
+
+.assign-workbooks-container h3 {
+  font-size: 1.6rem;
+  color: #333333;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.assign-workbooks-container .FixedSizeList {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #fafafa;
+}
+
+.assign-workbooks-container button {
+  padding: 12px 20px;
+  background-color: #4f46e5; /* Indigo */
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.assign-workbooks-container button:hover {
+  background-color: #4338ca; /* Darker indigo on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.workbook-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 15px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  transition: all 0.2s ease-in-out;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+}
+
+.workbook-item:hover {
+  background-color: #f0f4ff; /* light hover color */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.workbook-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #4f46e5; /* Indigo color */
+  cursor: pointer;
+}
+
+.workbook-item:last-child {
+  border-bottom: none; /* Remove border for last item */
+}

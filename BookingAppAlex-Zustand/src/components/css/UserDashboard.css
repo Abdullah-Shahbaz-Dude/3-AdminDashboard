@@ -1,0 +1,95 @@
+/* Wrapper for the whole section */
+.user-dashboard {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: "Inter", sans-serif;
+  color: #1f2937;
+}
+
+/* Heading */
+.user-dashboard h1 {
+  font-size: 2.25rem; /* slightly bigger */
+  font-weight: 700;
+  margin-bottom: 12px; /* balanced spacing */
+  line-height: 1.2;
+  color: #1f2937;
+}
+
+/* Subtext / intro paragraph */
+.user-dashboard p {
+  font-size: 2rem;
+  color: #4b5563;
+  margin-bottom: 50px; /* natural spacing before workbooks */
+  line-height: 1.6;
+  margin-top: 28px;
+}
+
+/* Workbooks container */
+.workbooks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* slightly larger gap for clarity */
+}
+
+/* No workbooks assigned text */
+.workbooks-container > p {
+  font-style: italic;
+  color: #9ca3af;
+  text-align: center;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Grid layout for workbook cards */
+.workbooks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+/* Individual workbook card */
+.workbooks-grid > div {
+  background-color: #ffffff;
+  border-radius: 14px;
+  padding: 22px 18px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 130px;
+}
+
+/* Hover effect for workbook cards */
+.workbooks-grid > div:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
+}
+
+/* Workbook title */
+.workbooks-grid p {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 14px 0; /* better spacing between title and button */
+  color: #111827;
+}
+
+/* Open workbook link styled as a button */
+.workbook-link {
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #4f46e5; /* indigo */
+  border-radius: 10px;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  align-self: flex-start;
+}
+
+.workbook-link:hover {
+  background-color: #4338ca;
+  transform: translateY(-1px);
+}

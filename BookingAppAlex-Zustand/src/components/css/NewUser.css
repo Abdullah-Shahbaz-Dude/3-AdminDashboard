@@ -1,0 +1,29 @@
+/* Reset some default styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* css/NewUser.css */
+.new-user-container {
+  max-width: 600px;
+  margin: 40px auto;
+}
+.form-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+.submit-button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+.error-text {
+  color: red;
+  margin-bottom: 10px;
+}

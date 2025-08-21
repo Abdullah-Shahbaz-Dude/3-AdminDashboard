@@ -1,0 +1,95 @@
+/* --- Layout container --- */
+.layout-container {
+  display: flex;
+  min-height: 100vh; /* Full viewport height */
+  width: 100%;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  position: fixed; /* stays fixed on the left */
+  top: 0;
+  left: 0;
+  height: 100vh; /* Full viewport height */
+  width: 260px;
+  background: linear-gradient(
+    180deg,
+    #3498db,
+    #2980b9
+  ); /* Gradient for depth */
+  padding: 25px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 3px 0 15px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+/* --- Sidebar menu --- */
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+/* Sidebar items */
+.sidebar li {
+  width: 100%;
+}
+
+/* Sidebar links */
+.sidebar a {
+  display: block;
+  width: 100%;
+  padding: 12px 20px;
+  color: #ecf0f1;
+  text-decoration: none;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  position: relative;
+  border-radius: 0 25px 25px 0; /* rounded edge on hover */
+}
+
+/* Hover effect */
+.sidebar a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding-left: 28px;
+}
+
+/* Active link */
+.sidebar a.active {
+  background-color: #1abc9c;
+  color: #fff;
+  font-weight: 500;
+  border-left: 4px solid #fff;
+}
+
+/* --- Main content area --- */
+.layout-content {
+  flex: 1;
+  padding: 25px;
+  margin-left: 260px; /* match sidebar width */
+  background-color: #f5f5f5; /* light background for content */
+  box-sizing: border-box;
+  transition: margin-left 0.3s ease;
+}
+
+/* --- Responsive sidebar --- */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+    padding: 20px 0;
+  }
+
+  .layout-content {
+    margin-left: 200px;
+    padding: 20px;
+  }
+
+  .sidebar a {
+    font-size: 14px;
+    padding: 10px 15px;
+  }
+}
