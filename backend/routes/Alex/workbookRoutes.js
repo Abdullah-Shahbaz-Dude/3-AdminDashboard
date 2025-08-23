@@ -1,12 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const workbookController = require("../../controllers/workbookController");
+const {
+  getAllWorkbooks,
+  getWorkbooksById,
+  submitWorkbook,
+} = require("../../controllers/workbookController");
+const csrf = require("csurf");
 
-router.get("/", workbookController.getAllWorkbooks);
+const csrfProtection = csrf({ cookie: true });
 
-router.get("/:id", workbookController.getWorkbooksById);
-console.log("✅ workbookRoutes loaded");
-router.post("/forms/:id/submit", workbookController.submitWorkbook);
-// console.log("📥 Submit hit:", req.params.id);
-
+router.get("/", getAllWorkbooks);
+router.get("/:id", getWorkbooksById);
+router.post("/forms/:id/submit", csrfProtection, submitWorkbook);
 module.exports = router;

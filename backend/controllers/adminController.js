@@ -6,106 +6,99 @@ const User = require("../model/Alex/newUser");
 const { check, validationResult } = require("express-validator");
 
 const loginAdmin = asyncHandler(async (req, res) => {
-  console.log(req.body); // Add this
-
   await Promise.all([
     check("email").isEmail().withMessage("Invalid email format").run(req),
     check("password").notEmpty().withMessage("Password is required").run(req),
   ]);
 
-  // await check("email").isEmail().withMessage("Invalid email format").run(req);
-
-  // // Validate password
-  // await check("password")
-  //   .notEmpty()
-  //   .withMessage("Password is required")
-  //   .run(req);
-
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    const err = new Error("Validation failed");
-    err.statusCode = 400;
-    err.errors = errors.array();
-    throw err;
+    return res
+      .status(400)
+      .json({ success: false, message: errors.array()[0].msg });
   }
 
   const { email, password } = req.body;
 
   const existedAdmin = await Admin.findOne({ email });
-
   if (!existedAdmin) {
-    const err = new Error("Invalid credentials");
-    err.statusCode = 401;
-    throw err;
+    return res
+      .status(401)
+      .json({ success: false, message: "Invalid credentials" });
   }
 
-  // Compare password
-
-  const hashedPassword = existedAdmin.password;
-  const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+  const isPasswordValid = await bcrypt.compare(password, existedAdmin.password);
   if (!isPasswordValid) {
-    const err = new Error("Invalid credentials => password");
-    err.statusCode = 401;
-    throw err;
+    return res
+      .status(401)
+      .json({ success: false, message: "Invalid credentials" });
   }
 
-  const token = jwt.sign({ id: existedAdmin._id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
+  const token = jwt.sign(
+    { id: existedAdmin._id, email: existedAdmin.email },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "15m", // Reduced to 15 minutes for better security
+    }
+  );
+
+  res.cookie("auth_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 15 * 60 * 1000, // 15 minutes
   });
-  res.json({ token, email: existedAdmin.email });
+
+  res.json({ success: true, email: existedAdmin.email });
 });
 
 const verifyAdmin = asyncHandler(async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
+  const token = req.cookies.auth_token;
   if (!token) {
-    const err = new Error("No token provided");
-    err.statusCode = 401;
-    throw err;
+    return res
+      .status(401)
+      .json({ success: false, message: "No token provided" });
   }
-
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const admin = await Admin.findById(decoded.id);
     if (!admin) {
-      const err = new Error("Admin not found");
-      err.statusCode = 401;
-      throw err;
+      return res
+        .status(401)
+        .json({ success: false, message: "Admin not found" });
     }
     req.admin = admin;
+    req.token = token; // Attach token for validateToken
     next();
   } catch (error) {
-    const err = new Error("Invalid token");
-    err.statusCode = 401;
-    throw err;
+    return res.status(401).json({ success: false, message: "Invalid token" });
   }
 });
 
 const validateToken = asyncHandler(async (req, res) => {
-  console.log("validateToken: Request received for /admin/validate-token");
-  const token = req.headers.authorization?.split(" ")[1];
+  const token = req.cookies.auth_token;
   if (!token) {
-    const err = new Error("No token provided");
-    err.statusCode = 401;
-    throw err;
+    return res
+      .status(401)
+      .json({ success: false, message: "No token provided" });
   }
-
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const admin = await Admin.findById(decoded.id).select("email");
     if (!admin) {
-      const err = new Error("Admin not found");
-      err.statusCode = 401;
-      throw err;
+      return res
+        .status(401)
+        .json({ success: false, message: "Admin not found" });
     }
-    res.status(200).json({ valid: true, email: admin.email });
+    res.status(200).json({ success: true, token, email: admin.email });
   } catch (error) {
-    console.error("Validate token error:", error);
-    const err = new Error("Invalid or expired token");
-    err.statusCode = 401;
-    throw err;
+    res.clearCookie("auth_token");
+    return res
+      .status(401)
+      .json({ success: false, message: "Invalid or expired token" });
   }
 });
-// Get all users
+
 const getAllUsers = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -131,19 +124,22 @@ const getAllUsers = asyncHandler(async (req, res) => {
   });
 });
 
-const deleteUserByAdmin = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deletedUser = await User.findByIdAndDelete(id);
-    if (!deletedUser)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    res.json({ success: true, message: "User deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Server error" });
+const deleteUserByAdmin = asyncHandler(async (req, res) => {
+  await check("id").isMongoId().withMessage("Invalid user ID").run(req);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json({ success: false, message: errors.array()[0].msg });
   }
-};
+
+  const { id } = req.params;
+  const deletedUser = await User.findByIdAndDelete(id);
+  if (!deletedUser) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+  res.json({ success: true, message: "User deleted successfully" });
+});
 
 module.exports = {
   loginAdmin,

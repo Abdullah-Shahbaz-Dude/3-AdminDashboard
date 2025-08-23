@@ -1,26 +1,34 @@
 const crypto = require("crypto");
 const User = require("../model/Alex/newUser");
-const Workbooks = require("../model/Alex/WorksheetsSchema"); // <-- make sure you have this model
+const Workbooks = require("../model/Alex/WorksheetsSchema");
 const mongoose = require("mongoose");
+const { check, validationResult } = require("express-validator");
 
-// Create User
 exports.createUser = async (req, res) => {
+  await Promise.all([
+    check("email").isEmail().withMessage("Invalid email format").run(req),
+    check("name").notEmpty().withMessage("Name is required").run(req),
+  ]);
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json({ success: false, message: errors.array()[0].msg });
+  }
+
   const { email, name } = req.body;
   try {
-    // check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.json({
-        success: false, // indicates failure
-        message: "User already present!",
+        success: false,
+        message: "User already exists",
         user: existingUser,
       });
     }
 
-    // generate random token
     const accessToken = crypto.randomBytes(16).toString("hex");
-
-    // create new user
     const newUser = new User({ email, name, accessToken });
     await newUser.save();
 
@@ -29,68 +37,76 @@ exports.createUser = async (req, res) => {
       message: "User created successfully",
       user: newUser,
     });
-    console.log(newUser);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Assign Workbooks
 exports.assignWorkbooks = async (req, res) => {
+  await Promise.all([
+    check("id").isMongoId().withMessage("Invalid user ID").run(req),
+    check("workbookIds")
+      .isArray({ min: 1 })
+      .withMessage("workbookIds must be a non-empty array")
+      .run(req),
+    check("workbookIds.*")
+      .isMongoId()
+      .withMessage("Invalid workbook ID")
+      .run(req),
+  ]);
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json({ success: false, message: errors.array()[0].msg });
+  }
+
   try {
     const { id } = req.params;
-    const { workbookIds } = req.body; // 👈 id = userId, workbookIds = array of IDs
+    const { workbookIds } = req.body;
 
-    if (!Array.isArray(workbookIds) || workbookIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "workbookIds must be a non-empty array",
-      });
-    }
-
-    // 1. Validate IDs exist in Workbooks collection
     const existingWorkbooks = await Workbooks.find({
       _id: { $in: workbookIds },
-    }).select("_id"); // only fetch _id
+    }).select("_id");
 
     const validIds = existingWorkbooks.map((wb) => wb._id.toString());
-
     if (validIds.length !== workbookIds.length) {
       return res.status(400).json({
-        success: true,
+        success: false,
         message: "Some workbook IDs are invalid",
-        validIds,
       });
     }
 
-    // 2. Assign valid workbooks to user
     const user = await User.findByIdAndUpdate(
       id,
       { $set: { workbooks: validIds } },
       { new: true }
-    );
+    ).populate("workbooks");
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    res.json({ message: "Workbooks assigned", user, success: true });
+    res.json({ success: true, message: "Workbooks assigned", user });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 exports.deleteUser = async (req, res) => {
-  console.log(req.params);
-  const { id } = req.params;
-
-  // Validate MongoDB ObjectId
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ success: false, message: "Invalid user ID" });
+  await check("id").isMongoId().withMessage("Invalid user ID").run(req);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json({ success: false, message: errors.array()[0].msg });
   }
 
   try {
-    // Find the user first
+    const { id } = req.params;
     const user = await User.findById(id);
     if (!user) {
       return res
@@ -98,25 +114,31 @@ exports.deleteUser = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    // Delete the user
     await User.findByIdAndDelete(id);
-
-    res.json({
-      message: "User and their workbooks deleted successfully",
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 exports.getUserById = async (req, res) => {
+  await check("id").isMongoId().withMessage("Invalid user ID").run(req);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json({ success: false, message: errors.array()[0].msg });
+  }
+
   try {
     const user = await User.findById(req.params.id).populate("workbooks");
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

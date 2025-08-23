@@ -6,15 +6,13 @@ const {
   deleteUser,
   getUserById,
 } = require("../../controllers/newUserController");
+const csrf = require("csurf");
 
-// Create a new user
-router.post("/", createUser);
+const csrfProtection = csrf({ cookie: true });
 
-// Assign workbooks to an existing user
-router.patch("/:id/assign-workbooks", assignWorkbooks);
-
-router.delete("/:id", deleteUser);
-
+router.post("/", csrfProtection, createUser);
+router.patch("/:id/assign-workbooks", csrfProtection, assignWorkbooks);
+router.delete("/:id", csrfProtection, deleteUser);
 router.get("/:id", getUserById);
 
 module.exports = router;

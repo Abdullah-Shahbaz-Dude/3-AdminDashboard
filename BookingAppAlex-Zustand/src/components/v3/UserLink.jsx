@@ -10,30 +10,58 @@ import "../css/UserLink.css";
 
 const UserLink = () => {
   const navigate = useNavigate();
-  const { user, setUser, setLinkVisible } = useStore();
+  const { user: storeUser, setUser, setLinkVisible } = useStore();
   const [copied, setCopied] = useState(false);
   const { userId } = useParams();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["user", userId],
-    queryFn: () =>
-      api.get(`/api/user-dashboard/users/${userId}`).then((res) => res.data),
+    queryFn: async () => {
+      const response = await api.get(`/api/user-dashboard/users/${userId}`);
+      console.log("User fetch response:", response.data);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch user");
+      }
+      return response.data;
+    },
+    onError: (err) => {
+      console.error("useQuery error:", err);
+      if (err.response?.status === 401) {
+        toast.error("Session expired. Redirecting to login...");
+        navigate("/admin");
+      } else {
+        navigate("/new-user");
+      }
+    },
   });
-  // console.log(data);
 
-  if (isLoading) return <ClipLoader color="#007bff" size={50} />;
-  if (!data) return <div>User not found</div>;
+  if (isLoading)
+    return <ClipLoader color="#007bff" size={50} aria-label="Loading" />;
+  if (error || !data?.success) {
+    console.error("User fetch error:", error?.message || data?.message);
+    return null;
+  }
 
-  if (!user || user._id !== data._id) {
-    setUser(data);
+  const { user } = data;
+
+  if (!user?.accessToken) {
+    console.error("No accessToken for user:", user);
+    navigate("/new-user");
+    return null;
+  }
+
+  if (!storeUser || storeUser._id !== user._id) {
+    setUser(user);
     setLinkVisible(true);
   }
 
   const navigateToNewUser = () => navigate("/new-user");
 
   const copyToClipboard = () => {
-    if (!user) return;
-    const link = `${import.meta.env.VITE_API_URL}/user-dashboard/${user.accessToken}`;
+    const link = `${
+      import.meta.env.VITE_API_URL || "http://localhost:5000"
+    }/api/user-dashboard/validate/${user.accessToken}`;
+    console.log("Copying link:", link);
     navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
       toast.success("Link copied!");
@@ -44,11 +72,14 @@ const UserLink = () => {
   return (
     <div className="user-link">
       <p>
-        User access link:{" "}
+        User access link:
         <a
           href={`/user-dashboard/${user.accessToken}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={(e) => {
+            console.log("Link clicked:", e.target.href); // Debug log
+          }}
         >
           Click here
         </a>

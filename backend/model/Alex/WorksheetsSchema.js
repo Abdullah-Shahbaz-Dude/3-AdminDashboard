@@ -1,16 +1,16 @@
 const mongoose = require("mongoose");
-const questionModel = new mongoose.Schema(
+const WorkbookSchema = new mongoose.Schema(
   {
-    title: { type: String },
+    title: { type: String, required: true },
     description: { type: String },
-    link: { type: mongoose.Schema.Types.ObjectId, ref: "Workbooks" },
     questions: [
       {
-        question: { type: String },
+        question: { type: String, required: true },
+        answerType: { type: String, enum: ["text", "number"], default: "text" },
         answer: { type: String, default: "" },
       },
     ],
   },
   { timestamps: true }
 );
-module.exports = mongoose.model("Workbooks", questionModel);
+module.exports = mongoose.model("Workbook", WorkbookSchema);

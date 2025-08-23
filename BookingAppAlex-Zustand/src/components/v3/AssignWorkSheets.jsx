@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FixedSizeList } from "react-window";
@@ -10,11 +10,23 @@ import Button from "./Button";
 import "../css/AssignWorkbooks.css";
 
 const fetchData = async (userId) => {
-  const [workbooks, user] = await Promise.all([
+  const [workbooksResponse, userResponse] = await Promise.all([
     api.get("/api/workbooks").then((res) => res.data),
     api.get(`/api/user-dashboard/users/${userId}`).then((res) => res.data),
   ]);
-  return { workbooks, user };
+  console.log("Workbooks response:", workbooksResponse); // Debug log
+  console.log("User response:", userResponse); // Debug log
+  if (!workbooksResponse.success || !userResponse.success) {
+    throw new Error(
+      workbooksResponse.message ||
+        userResponse.message ||
+        "Failed to fetch data"
+    );
+  }
+  return {
+    workbooks: workbooksResponse.workbooks || [],
+    userData: userResponse.user || null,
+  };
 };
 
 const AssignWorkSheets = () => {
@@ -27,8 +39,12 @@ const AssignWorkSheets = () => {
     queryFn: () => fetchData(userId),
   });
 
+  console.log("Store state:", { selected, setUser, setUsers }); // Debug log
+  console.log("Query data:", data); // Debug log
+
   const handleSelection = useCallback(
     (id) => {
+      console.log("Selecting workbook:", id); // Debug log
       setSelected(
         selected.includes(id)
           ? selected.filter((i) => i !== id)
@@ -39,7 +55,7 @@ const AssignWorkSheets = () => {
   );
 
   const assignWorkbooks = useCallback(async () => {
-    if (!data?.user) {
+    if (!data?.userData) {
       toast.error("No user found.");
       return;
     }
@@ -49,9 +65,13 @@ const AssignWorkSheets = () => {
     }
     try {
       const response = await api.patch(
-        `/api/user-dashboard/users/${data.user._id}/assign-workbooks`,
+        `/api/user-dashboard/users/${data.userData._id}/assign-workbooks`,
         { workbookIds: selected }
       );
+      console.log("Assign workbooks response:", response.data); // Debug log
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to assign workbooks");
+      }
       const { user: updatedUser } = response.data;
       setSelected([]);
       setLinkVisible(true);
@@ -62,7 +82,8 @@ const AssignWorkSheets = () => {
       toast.success("Workbooks assigned!");
       navigate(`/user-link/${updatedUser._id}`, { replace: true });
     } catch (err) {
-      // Handled by axios interceptor
+      console.error("Assign workbooks error:", err); // Debug log
+      toast.error(err.message || "Failed to assign workbooks");
     }
   }, [
     data,
@@ -74,11 +95,24 @@ const AssignWorkSheets = () => {
     navigate,
   ]);
 
-  if (isLoading) return <ClipLoader color="#007bff" size={50} />;
-  if (error || !data?.user)
-    return <div>Error loading data or user not found</div>;
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <ClipLoader color="#007bff" size={50} aria-label="Loading" />
+      </div>
+    );
+  }
 
-  const { workbooks, user } = data;
+  if (error || !data) {
+    console.error("Query error:", error); // Debug log
+    return (
+      <div className="error-container">
+        Error: {error?.message || "Unable to load user or workbooks"}
+      </div>
+    );
+  }
+
+  const { workbooks, userData } = data;
 
   const Row = ({ index, style }) => (
     <div style={style} className="workbook-item">
@@ -86,23 +120,27 @@ const AssignWorkSheets = () => {
         type="checkbox"
         checked={selected.includes(workbooks[index]._id)}
         onChange={() => handleSelection(workbooks[index]._id)}
-        aria-label={`Select ${workbooks[index].title}`}
+        aria-label={`Select ${workbooks[index].title || "Untitled Workbook"}`}
       />
-      {workbooks[index].title}
+      <span>{workbooks[index].title || "Untitled Workbook"}</span>
     </div>
   );
 
   return (
     <div className="assign-workbooks-container">
-      <h3>Assign Workbooks to {user.name}</h3>
-      <FixedSizeList
-        height={400}
-        width="100%"
-        itemCount={workbooks.length}
-        itemSize={50}
-      >
-        {Row}
-      </FixedSizeList>
+      <h3>Assign Workbooks to {userData?.name || "User"}</h3>
+      {workbooks.length === 0 ? (
+        <p>No workbooks available</p>
+      ) : (
+        <FixedSizeList
+          height={400}
+          width="100%"
+          itemCount={workbooks.length}
+          itemSize={50}
+        >
+          {Row}
+        </FixedSizeList>
+      )}
       <Button onClick={assignWorkbooks}>Assign Workbooks</Button>
     </div>
   );

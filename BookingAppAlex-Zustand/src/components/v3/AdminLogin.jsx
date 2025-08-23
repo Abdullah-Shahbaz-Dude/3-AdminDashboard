@@ -22,14 +22,12 @@ const AdminLogin = () => {
       setLoading(true);
       try {
         const response = await api.post("/admin/login", data);
-        const { token } = response.data;
-        if (!token) {
-          toast.error("Login failed: No token received");
-          return;
+        if (response.data.success) {
+          toast.success("Login successful! Redirecting...");
+          navigate("/dashboard");
+        } else {
+          toast.error("Login failed");
         }
-        localStorage.setItem("token", token);
-        toast.success("Login successful! Redirecting...");
-        navigate("/dashboard");
       } catch (error) {
         // Handled by axios interceptor
       } finally {
@@ -42,7 +40,7 @@ const AdminLogin = () => {
   return (
     <div className="admin-login-container">
       <h2>Admin Login</h2>
-      <form onSubmit={handleSubmit(handleSubmitForm)}>
+      <form className="admin-login" onSubmit={handleSubmit(handleSubmitForm)}>
         <FormInput
           register={register}
           name="email"

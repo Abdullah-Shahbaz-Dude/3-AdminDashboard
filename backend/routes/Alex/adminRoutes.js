@@ -8,16 +8,19 @@ const {
   deleteUserByAdmin,
 } = require("../../controllers/adminController");
 const rateLimit = require("express-rate-limit");
+const csrf = require("csurf");
+
+const csrfProtection = csrf({ cookie: true });
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit to 5 requests per window
+  max: 5, // Reduced to 5 attempts
   message: "Too many login attempts, please try again later.",
 });
 
-router.post("/login", loginLimiter, loginAdmin);
+router.post("/login", loginLimiter, csrfProtection, loginAdmin);
 router.get("/validate", validateToken);
 router.get("/users", verifyAdmin, getAllUsers);
-router.delete("/users/:id", verifyAdmin, deleteUserByAdmin);
+router.delete("/users/:id", verifyAdmin, csrfProtection, deleteUserByAdmin);
 
 module.exports = router;

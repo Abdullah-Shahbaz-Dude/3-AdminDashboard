@@ -20,16 +20,16 @@ h2 {
   letter-spacing: 1px;
 }
 
-form {
+.admin-login {
   background: #fff;
   padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  width: 30%; /* take up most of the small screens */
+  max-width: 380px; /* balanced max width */
+  min-width: 280px; /* avoids shrinking too much */
   transition: transform 0.3s ease-in-out;
 }
-
 form:hover {
   transform: translateY(-5px);
 }
